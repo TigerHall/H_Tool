@@ -1,0 +1,25 @@
+/* PPT下载按钮样式 */
+#ppt-download-btn {
+  background-color: #165DFF;
+  color: white;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#ppt-download-btn:hover {
+  background-color: #165DFFEE;
+}
+
+#ppt-download-btn:disabled {
+  background-color: #165DFF80;
+  cursor: not-allowed;
+}
+
+#ppt-download-btn i {
+  margin-right: 0.5rem;
+}

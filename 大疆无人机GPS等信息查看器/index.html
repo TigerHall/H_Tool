@@ -9,7 +9,29 @@
       href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css"
       rel="stylesheet"
     />
+    <!-- 添加JSZip依赖 -->
+    <script src="./jszip.min.js"></script>
+
+    <!-- 确保pptxgenjs在JSZip之后加载 -->
+    <script src="./pptxgen.bundle.js"></script>
+    <script>
+      console.log("pptxgenjs加载完成", typeof PptxGenJS, PptxGenJS);
+      if (typeof PptxGenJS === "undefined") {
+        console.error("pptxgenjs加载失败");
+      } else {
+        console.log("PptxGenJS版本:", PptxGenJS.version);
+        console.log("PptxGenJS构造函数:", typeof PptxGenJS, PptxGenJS);
+        console.log(
+          "PptxGenJS方法:",
+          Object.keys(PptxGenJS).filter(
+            (k) => typeof PptxGenJS[k] === "function"
+          )
+        );
+      }
+    </script>
     <script src="./exif.min.js"></script>
+    <link rel="stylesheet" href="./ppt-generator.css" />
+    <script src="./ppt-generator.js"></script>
 
     <script>
       tailwind.config = {
@@ -56,7 +78,7 @@
       }
     </style>
   </head>
-  <body class="bg-neutral font-inter text-dark">
+  <body class="bg-neutral font-inter text-dark min-h-screen flex flex-col">
     <header class="bg-white shadow-md py-4 px-6">
       <div class="container mx-auto flex justify-between items-center">
         <div class="flex items-center space-x-3">
@@ -73,6 +95,14 @@
             <i class="fa fa-folder-open mr-2"></i>
             <span>选择文件夹</span>
           </button>
+          <button
+            id="ppt-download-btn"
+            class="bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 flex items-center"
+            disabled
+          >
+            <i class="fa fa-download mr-2"></i>
+            <span>导出PPT</span>
+          </button>
           <input
             type="file"
             id="folder-input"
@@ -85,7 +115,7 @@
       </div>
     </header>
 
-    <main class="container mx-auto px-6 py-8">
+    <main class="container mx-auto px-6 py-8 flex-grow">
       <section class="mb-8">
         <div class="bg-white rounded-xl shadow-lg p-6">
           <div id="loading-overlay" class="py-12 text-center hidden">
@@ -93,8 +123,8 @@
             <p class="text-gray-600">正在处理照片...</p>
           </div>
 
-          <div id="empty-state" class="py-12 text-center">
-            <i class="fa fa-folder-open-o text-4xl text-gray-300 mb-4"></i>
+          <div id="empty-state" class="py-8 text-center">
+            <i class="fa fa-folder-open-o text-3xl text-gray-300 mb-3"></i>
             <p class="text-gray-500">请选择一个文件夹开始</p>
           </div>
 
@@ -111,20 +141,25 @@
       </section>
     </main>
 
-    <footer class="bg-white border-t border-gray-200 py-6 mt-12">
+    <footer class="bg-white border-t border-gray-200 py-4 mt-8">
       <div class="container mx-auto px-6 text-center text-gray-500 text-sm">
-        <p id="copyright">© 大疆无人机照片信息查看器，此应用仅在本地处理照片及信息</p>
+        <p id="copyright">
+          © 大疆无人机照片信息查看器，此应用仅在本地处理照片及信息
+        </p>
         <script>
           const now = new Date();
           const year = now.getFullYear();
           const month = now.getMonth() + 1;
           const day = now.getDate();
-          document.getElementById('copyright').textContent = 
-            `© ${year}年${month}月${day}日 大疆无人机照片信息查看器，此应用仅在本地处理照片及信息`;
+          document.getElementById(
+            "copyright"
+          ).textContent = `© ${year}年${month}月${day}日 大疆无人机照片信息查看器，此应用仅在本地处理照片及信息`;
         </script>
       </div>
     </footer>
 
+    <!-- 修改模块加载顺序 -->
+    <script src="./ppt-generator.js"></script>
     <script src="./cl.js"></script>
   </body>
 </html>
