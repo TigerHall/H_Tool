@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edge浏览器全尺寸截图工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0078D7', // Edge浏览器蓝色
+                        secondary: '#2D7DDB',
+                        dark: '#1A1A1A',
+                        light: '#F5F5F5'
+                    },
+                    fontFamily: {
+                        sans: ['Segoe UI', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .keyboard-key {
+                @apply inline-flex items-center justify-center px-3 py-1 rounded border bg-gray-100 text-gray-800 text-sm font-medium shadow-sm;
+            }
+            .step-item {
+                @apply flex items-start mb-6 p-4 rounded-lg transition-all duration-300 hover:bg-blue-50;
+            }
+            .pulse-animation {
+                animation: pulse 2s infinite;
+            }
+            @keyframes pulse {
+                0% {
+                    box-shadow: 0 0 0 0 rgba(0, 120, 215, 0.4);
+                }
+                70% {
+                    box-shadow: 0 0 0 10px rgba(0, 120, 215, 0);
+                }
+                100% {
+                    box-shadow: 0 0 0 0 rgba(0, 120, 215, 0);
+                }
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-12 max-w-3xl">
+        <header class="text-center mb-12">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary mb-4">
+                <i class="fa fa-edge text-white text-3xl"></i>
+            </div>
+            <h1 class="text-[clamp(1.8rem,5vw,2.5rem)] font-bold text-gray-800 mb-3">Edge浏览器全尺寸截图工具</h1>
+            <p class="text-gray-600 text-lg">一键获取完整网页的截图，无需记住复杂操作</p>
+        </header>
+
+        <main class="bg-white rounded-xl shadow-lg p-8 mb-10">
+            <div class="text-center mb-10">
+                <button id="screenshotBtn"
+                    class="bg-primary hover:bg-secondary text-white font-bold py-4 px-8 rounded-lg text-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-primary/30 pulse-animation">
+                    <i class="fa fa-camera mr-2"></i> 捕获全尺寸屏幕截图
+                </button>
+                <p class="mt-4 text-gray-500 text-sm">点击按钮查看操作步骤</p>
+            </div>
+
+            <div id="instructions" class="hidden">
+                <h2 class="text-xl font-semibold text-gray-800 mb-6 flex items-center">
+                    <i class="fa fa-list-ol text-primary mr-2"></i> 操作步骤
+                </h2>
+                <div class="space-y-4">
+                    <div class="step-item">
+                        <div
+                            class="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center mr-4">
+                            1</div>
+                        <div>
+                            <p class="font-medium text-gray-800">按下键盘快捷键打开命令菜单</p>
+                            <div class="mt-2 flex items-center space-x-2">
+                                <span class="keyboard-key">F12</span>
+                                <span class="text-gray-500">然后</span>
+                                <span class="keyboard-key">Ctrl</span>
+                                <span class="text-gray-500">+</span>
+                                <span class="keyboard-key">Shift</span>
+                                <span class="text-gray-500">+</span>
+                                <span class="keyboard-key">P</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-item">
+                        <div
+                            class="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center mr-4">
+                            2</div>
+                        <div>
+                            <p class="font-medium text-gray-800">在弹出的命令框中输入</p>
+                            <div class="mt-2 p-3 bg-gray-50 rounded border border-gray-200 font-mono text-sm">>捕获全尺寸屏幕截图
+                            </div>
+                            <p class="mt-2 text-gray-600 text-sm">注意：输入时包含">"符号</p>
+                        </div>
+                    </div>
+
+                    <div class="step-item">
+                        <div
+                            class="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center mr-4">
+                            3</div>
+                        <div>
+                            <p class="font-medium text-gray-800">按下回车键确认</p>
+                            <div class="mt-2 flex items-center space-x-2">
+                                <span class="keyboard-key">Enter</span>
+                            </div>
+                            <p class="mt-2 text-gray-600 text-sm">截图将自动保存到您的下载文件夹</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-10 pt-6 border-t border-gray-200">
+                <h3 class="font-semibold text-gray-800 mb-3">提示</h3>
+                <ul class="list-disc pl-5 text-gray-600 space-y-2">
+                    <li>此功能可以捕获整个网页，包括超出屏幕显示的部分</li>
+                    <li>截图将以PNG格式保存</li>
+                    <li>确保您使用的是最新版本的Edge浏览器以获得最佳体验</li>
+                </ul>
+            </div>
+        </main>
+
+        <footer class="text-center text-gray-500 text-sm">
+            <p>本工具仅提供操作指引，无法直接控制浏览器功能</p>
+            <p class="mt-1">© 2025 Edge浏览器截图助手</p>
+        </footer>
+    </div>
+
+    <script>
+        // 检测浏览器是否为Edge
+        const isEdge = /Edg/.test(navigator.userAgent);
+
+        // 按钮点击事件
+        document.getElementById('screenshotBtn').addEventListener('click', function () {
+            const instructions = document.getElementById('instructions');
+
+            // 显示操作步骤
+            instructions.classList.toggle('hidden');
+
+            // 如果不是Edge浏览器，显示提示
+            if (!isEdge && instructions.classList.contains('hidden') === false) {
+                alert('检测到您可能没有使用Edge浏览器，这些步骤专为Edge浏览器设计。');
+            }
+        });
+
+        // 页面加载时检查浏览器
+        window.addEventListener('load', function () {
+            if (!isEdge) {
+                setTimeout(() => {
+                    alert('请注意：此工具专为Edge浏览器设计，您可能正在使用其他浏览器，操作步骤可能不同。');
+                }, 2000);
+            }
+        });
+    </script>
+</body>
+
+</html>

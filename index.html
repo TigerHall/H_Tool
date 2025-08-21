@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,8 +12,25 @@
             transform: translateY(-5px);
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
         }
+
+        /* 确保页面占满整个视口高度 */
+        html,
+        body {
+            height: 100%;
+        }
+
+        /* 使用 flex 布局将 footer 推到底部 */
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        main {
+            flex: 1;
+        }
     </style>
 </head>
+
 <body class="bg-gray-50 font-sans">
     <header class="bg-white shadow-sm">
         <div class="container mx-auto px-6 py-8">
@@ -45,9 +63,22 @@
                         </p>
                     </div>
                 </a>
-                
+
+                <a href="./小技巧/edge-screenshot-guide.html" class="tool-card transition-all duration-300">
+                    <div class="bg-white rounded-lg shadow-md p-6 h-full border border-gray-100">
+                        <div class="flex items-center mb-4">
+                            <i class="fa fa-camera text-blue-500 text-xl mr-3"></i>
+                            <h3 class="text-lg font-medium text-gray-800">浏览器截图技巧</h3>
+                        </div>
+                        <p class="text-gray-600 text-sm">
+                            获取完整的截图，利用浏览器开发者工具，截图效果和当前屏幕尺寸等有关。
+                        </p>
+                    </div>
+                </a>
+
                 <!-- 未来可添加更多工具 -->
-                <div class="bg-gray-50 rounded-lg p-6 border-2 border-dashed border-gray-200 flex items-center justify-center">
+                <div
+                    class="bg-gray-50 rounded-lg p-6 border-2 border-dashed border-gray-200 flex items-center justify-center">
                     <p class="text-gray-400 text-center">
                         <i class="fa fa-plus-circle text-lg mr-2"></i>
                         更多工具开发中...
@@ -57,7 +88,7 @@
         </section>
     </main>
 
-    <footer class="bg-white border-t border-gray-200 py-6">
+    <footer class="bg-white border-t border-gray-200 py-6 mt-auto">
         <div class="container mx-auto px-6 text-center text-gray-500 text-sm">
             <p id="copyright">© H_Tool 自制工具集</p>
         </div>
@@ -70,9 +101,10 @@
         const month = now.getMonth() + 1;
         const day = now.getDate();
         document.getElementById('current-date').textContent = `${year}年${month}月${day}日`;
-        
+
         // 更新版权年份
         document.getElementById('copyright').textContent = `© ${year} H_Tool 自制工具集`;
     </script>
 </body>
+
 </html>
