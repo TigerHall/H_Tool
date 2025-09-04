@@ -1,0 +1,109 @@
+/* 极简CSS重置 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* 基础布局 */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.6;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 容器样式 */
+.container {
+  width: 90%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* 头部样式 */
+header {
+  padding: 1rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo h1 {
+  font-size: 1.5rem;
+}
+
+.date {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* 主要内容 */
+main {
+  flex: 1;
+  padding: 1rem 0;
+}
+
+/* 工具卡片 */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.tool-card > div {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background: #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  aspect-ratio: 16/9;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.tool-card > div:hover {
+  transform: scale(1.05);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.tool-card h3 {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+  color: #99cc99;
+}
+
+.tool-card p {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* 页脚 */
+footer {
+  padding: 1rem 0;
+  border-top: 1px solid #eee;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* 弹窗基础样式 */
+dialog {
+  padding: 1.5rem;
+  border: none;
+  border-radius: 0.5rem;
+}
+
+dialog::backdrop {
+  background: rgba(0,0,0,0.5);
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
