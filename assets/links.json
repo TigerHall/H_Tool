@@ -1,0 +1,20 @@
+{
+  "links": [
+    {
+      "title": "大疆无人机GPS信息查看器",
+      "url": "大疆无人机GPS等信息查看器/index.html",
+      "description": "查看大疆无人机拍摄照片中的GPS信息",
+      "image": "assets/pic/1.png"
+    },
+    {
+      "title": "Edge截图指南",
+      "url": "小技巧/edge-screenshot-guide.html",
+      "description": "Microsoft Edge浏览器的截图功能使用指南",
+      "image": "assets/pic/edge截图指南.png"
+    },
+    {
+      "title": "未来还有更多小工具开发中",
+      "description": "这里将陆续更新更多小工具，敬请期待！"
+    }
+  ]
+}

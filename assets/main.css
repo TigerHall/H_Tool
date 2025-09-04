@@ -1,20 +1,43 @@
-/* 极简CSS重置 */
+/* ===== 基础重置与全局样式 ===== */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-/* 基础布局 */
+:root {
+  --primary-color: #99cc99;
+  --primary-dark: #77aa77;
+  --text-dark: #333;
+  --text-light: #fff;
+  --bg-light: #fff;
+  --bg-dark: #222;
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 5px 15px rgba(0, 0, 0, 0.2);
+  --transition: all 0.3s ease;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   line-height: 1.6;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  scroll-snap-type: y proximity;
 }
 
-/* 容器样式 */
+/* ===== 链接样式 ===== */
+a {
+  text-decoration: none;
+  color: var(--primary-color);
+  transition: var(--transition);
+}
+
+a:hover {
+  color: var(--primary-dark);
+}
+
+/* ===== 布局容器 ===== */
 .container {
   width: 90%;
   max-width: 1200px;
@@ -22,7 +45,7 @@ body {
   padding: 0 1rem;
 }
 
-/* 头部样式 */
+/* ===== 头部样式 ===== */
 header {
   padding: 1rem 0;
   border-bottom: 1px solid #eee;
@@ -36,6 +59,15 @@ header {
 
 .logo h1 {
   font-size: 1.5rem;
+  display: inline-flex;
+  align-items: center;
+}
+
+.logo h1:hover::after {
+  content: " - 自制的一些实用小工具集合";
+  font-size: 0.9rem;
+  color: #666;
+  margin-left: 0.5rem;
 }
 
 .date {
@@ -43,45 +75,73 @@ header {
   color: #666;
 }
 
-/* 主要内容 */
+/* ===== 主要内容区域 ===== */
 main {
   flex: 1;
   padding: 1rem 0;
 }
 
-/* 工具卡片 */
+/* ===== 工具卡片网格 ===== */
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1rem;
+  gap: 1.5rem;
+  padding: 1rem 0;
 }
 
-.tool-card > div {
-  padding: 1rem;
+/* ===== 卡片基础样式 ===== */
+.tool-card {
+  position: relative;
   border-radius: 0.5rem;
-  background: #fff;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  aspect-ratio: 16/9;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  overflow: hidden;
+  transition: var(--transition);
+  box-shadow: var(--shadow-sm);
+  padding: 1rem;
+  background: var(--bg-light);
 }
 
-.tool-card > div:hover {
-  transform: scale(1.05);
-  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+.tool-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 150px;
+  padding: 1.5rem;
 }
 
 .tool-card h3 {
-  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+.tool-card .description {
+  flex-grow: 1;
+}
+
+.tool-card h3 {
+  font-size: 1.2rem;
+  color: var(--primary-color);
   margin-bottom: 0.5rem;
-  color: #99cc99;
+  text-shadow: 0 0 0.1px rgba(0, 0, 0, 0.3);
 }
 
-.tool-card p {
+.tool-card .description {
   font-size: 0.9rem;
-  color: #666;
+  color: var(--text-dark);
+  opacity: 0;
+  max-height: 0;
+  transition: var(--transition);
+  overflow: hidden;
 }
 
-/* 页脚 */
+.tool-card:hover .description {
+  opacity: 1;
+  max-height: 100px;
+}
+
+.tool-card:hover {
+  transform: scale(1.05);
+  box-shadow: var(--shadow-md);
+}
+
+/* ===== 页脚样式 ===== */
 footer {
   padding: 1rem 0;
   border-top: 1px solid #eee;
@@ -90,7 +150,7 @@ footer {
   color: #666;
 }
 
-/* 弹窗基础样式 */
+/* ===== 弹窗基础样式 ===== */
 dialog {
   padding: 1.5rem;
   border: none;
@@ -98,10 +158,10 @@ dialog {
 }
 
 dialog::backdrop {
-  background: rgba(0,0,0,0.5);
+  background: rgba(0, 0, 0, 0.5);
 }
 
-/* 移动端适配 */
+/* ===== 响应式设计 ===== */
 @media (max-width: 768px) {
   .grid {
     grid-template-columns: 1fr;

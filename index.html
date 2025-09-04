@@ -1,54 +1,44 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="color-scheme" content="light" />
-    <title>H_Tool - 自制工具集</title>
-    <link rel="stylesheet" href="./assets/main.css" />
-  </head>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <title>H_Tool - 自制工具集</title>
+  <link rel="stylesheet" href="./assets/main.css">
+</head>
 
-  <body>
-    <header>
-      <div class="container">
-        <div class="header-content">
-          <div class="logo">
-            <h1>H_Tool</h1>
-          </div>
-          <div class="date">
-            <span id="current-date"></span>
-          </div>
+<body>
+  <!-- 页面头部 -->
+  <header>
+    <div class="container">
+      <div class="header-content">
+        <div class="logo">
+          <h1>🎛️H_Tool</h1>
+        </div>
+        <div class="date">
+          <span id="current-date"></span>
         </div>
       </div>
-    </header>
+    </div>
+  </header>
 
-    <main>
-      <div class="container">
-        <div class="grid">
-          <!-- 大疆无人机GPS查看器 -->
-          <a href="大疆无人机GPS等信息查看器/index.html" class="tool-card">
-            <div>
-              <h3>大疆无人机GPS信息查看器</h3>
-              <p>查看无人机照片的EXIF信息</p>
-            </div>
-          </a>
+  <!-- 主要内容区域 -->
+  <main>
+    <div class="container">
+      <!-- 工具卡片将通过common.js动态加载 -->
+      <div class="grid"></div>
+    </div>
+  </main>
 
-          <a href="./小技巧/edge-screenshot-guide.html" class="tool-card">
-            <div>
-              <h3>浏览器截图技巧</h3>
-              <p>获取完整的浏览器截图</p>
-            </div>
-          </a>
-        </div>
-      </div>
-    </main>
+  <!-- 页脚 -->
+  <footer>
+    <div class="container">
+      <p id="copyright">© H_Tool 自制工具集</p>
+    </div>
+  </footer>
 
-    <footer>
-      <div class="container">
-        <p id="copyright">© H_Tool 自制工具集</p>
-      </div>
-    </footer>
-
-    <script src="./assets/common.js"></script>
-  </body>
+  <!-- 引入JavaScript -->
+  <script src="./assets/common.js"></script>
+</body>
 </html>
