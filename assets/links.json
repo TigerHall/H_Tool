@@ -7,6 +7,12 @@
       "image": "assets/pic/1.png"
     },
     {
+      "title": "ADCP数据处理工具",
+      "url": "page/adcp.html",
+      "description": "处理和分析ADCP数据",
+      "image": "assets/pic/2.png"
+    },
+    {
       "title": "Edge截图指南",
       "url": "小技巧/edge-screenshot-guide.html",
       "description": "Microsoft Edge浏览器的截图功能使用指南",
