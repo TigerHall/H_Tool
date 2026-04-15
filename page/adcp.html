@@ -1,0 +1,1075 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>水文ADCP流速流向数据提取工具</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: "Microsoft YaHei", Arial, sans-serif;
+        background: #f0f4f8;
+        color: #2d3748;
+        min-height: 100vh;
+      }
+      .header {
+        background: linear-gradient(135deg, #1a56db 0%, #0ea5e9 100%);
+        color: white;
+        padding: 20px 32px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      }
+      .header h1 {
+        font-size: 22px;
+        font-weight: 700;
+      }
+      .header p {
+        font-size: 13px;
+        opacity: 0.85;
+        margin-top: 4px;
+      }
+      .container {
+        max-width: 1300px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+
+      .card {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 20px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+      }
+      .card h2 {
+        font-size: 15px;
+        font-weight: 700;
+        color: #1a56db;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .card h2::before {
+        content: "";
+        display: inline-block;
+        width: 4px;
+        height: 16px;
+        background: #1a56db;
+        border-radius: 2px;
+      }
+
+      .upload-area {
+        border: 2px dashed #c3d4f0;
+        border-radius: 10px;
+        padding: 40px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: #f7f9ff;
+      }
+      .upload-area:hover,
+      .upload-area.drag-over {
+        border-color: #1a56db;
+        background: #eef3ff;
+      }
+      .upload-area .icon {
+        font-size: 48px;
+        margin-bottom: 12px;
+      }
+      .upload-area p {
+        color: #64748b;
+        font-size: 14px;
+      }
+      .upload-area strong {
+        color: #1a56db;
+      }
+      #fileInput {
+        display: none;
+      }
+
+      .params-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 16px;
+      }
+      .param-item label {
+        display: block;
+        font-size: 12px;
+        color: #64748b;
+        margin-bottom: 4px;
+        font-weight: 600;
+      }
+      .param-item input {
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 14px;
+        color: #2d3748;
+        transition: border-color 0.2s;
+      }
+      .param-item input:focus {
+        outline: none;
+        border-color: #1a56db;
+        box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.1);
+      }
+      .param-item .hint {
+        font-size: 11px;
+        color: #94a3b8;
+        margin-top: 3px;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .btn-primary {
+        background: #1a56db;
+        color: white;
+      }
+      .btn-primary:hover {
+        background: #1447b3;
+      }
+      .btn-primary:disabled {
+        background: #94a3b8;
+        cursor: not-allowed;
+      }
+      .btn-success {
+        background: #0d9488;
+        color: white;
+      }
+      .btn-success:hover {
+        background: #0a7c72;
+      }
+      .btn-success:disabled {
+        background: #94a3b8;
+        cursor: not-allowed;
+      }
+
+      .log-box {
+        background: #0f172a;
+        color: #94a3b8;
+        border-radius: 8px;
+        padding: 16px;
+        font-family: "Consolas", monospace;
+        font-size: 12px;
+        height: 150px;
+        white-space: pre-wrap;
+        overflow-y: auto;
+        line-height: 1.6;
+      }
+      .log-box .log-ok {
+        color: #4ade80;
+      }
+      .log-box .log-warn {
+        color: #fbbf24;
+      }
+      .log-box .log-err {
+        color: #f87171;
+      }
+      .log-box .log-info {
+        color: #60a5fa;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      thead th {
+        background: #1a56db;
+        color: white;
+        padding: 10px 12px;
+        text-align: center;
+        white-space: nowrap;
+        font-weight: 600;
+      }
+      thead tr:nth-child(2) th {
+        background: #3b82f6;
+        font-weight: 500;
+        font-size: 11px;
+        padding: 6px 12px;
+      }
+      tbody tr:hover {
+        background: #f0f6ff;
+      }
+      tbody td {
+        padding: 8px 12px;
+        text-align: center;
+        border-bottom: 1px solid #f1f5f9;
+        white-space: nowrap;
+      }
+      tbody tr:nth-child(even) {
+        background: #f8fafc;
+      }
+      tbody tr:nth-child(even):hover {
+        background: #f0f6ff;
+      }
+      .td-time {
+        font-weight: 700;
+        color: #1a56db;
+      }
+      .td-depth {
+        color: #0d9488;
+        font-weight: 600;
+      }
+      .td-layer {
+        color: #7c3aed;
+        font-size: 11px;
+      }
+
+      .stats-row {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+      }
+      .stat-badge {
+        background: #eff6ff;
+        color: #1a56db;
+        border: 1px solid #bfdbfe;
+        border-radius: 20px;
+        padding: 4px 14px;
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      .action-bar {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .file-info {
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        border-radius: 8px;
+        padding: 12px 16px;
+        font-size: 13px;
+        color: #166534;
+        display: none;
+        margin-top: 12px;
+      }
+      .file-info.show {
+        display: block;
+      }
+
+      .mode-selector {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .mode-selector label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        cursor: pointer;
+        padding: 6px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        transition: all 0.2s;
+      }
+      .mode-selector label:has(input:checked) {
+        border-color: #1a56db;
+        background: #eff6ff;
+        font-weight: 700;
+        color: #1a56db;
+      }
+
+      .formula-box {
+        background: #fafafa;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 12px 16px;
+        font-size: 12px;
+        color: #64748b;
+        margin-top: 12px;
+        line-height: 1.8;
+      }
+      .formula-box code {
+        background: #eff6ff;
+        color: #1a56db;
+        padding: 1px 6px;
+        border-radius: 3px;
+        font-family: Consolas, monospace;
+        font-size: 12px;
+      }
+
+      @media (max-width: 600px) {
+        .container {
+          padding: 12px;
+        }
+        .params-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>🌊 水文ADCP流速流向数据提取工具</h1>
+      <p>上传TXT格式的ADCP观测数据，自动提取整点流速流向层位数据</p>
+    </div>
+
+    <div class="container">
+      <!-- 文件上传 -->
+      <div class="card">
+        <h2>上传数据文件</h2>
+        <div
+          class="upload-area"
+          id="uploadArea"
+          onclick="document.getElementById('fileInput').click()"
+        >
+          <div class="icon">📂</div>
+          <p><strong>点击选择文件</strong>或将文件拖放至此处</p>
+          <p style="margin-top: 8px; font-size: 12px">
+            支持 .txt 格式，GB2312编码
+          </p>
+        </div>
+        <input type="file" id="fileInput" accept=".txt" />
+        <div class="file-info" id="fileInfo"></div>
+      </div>
+
+      <!-- 参数配置 -->
+      <div class="card">
+        <h2>仪器参数（自动从文件头提取，可手动修改）</h2>
+        <div class="params-grid">
+          <div class="param-item">
+            <label>Ensemble Interval (s)</label>
+            <input
+              type="number"
+              id="ensInterval"
+              value="100"
+              min="1"
+              step="0.01"
+            />
+            <div class="hint">采样间隔（秒）</div>
+          </div>
+          <div class="param-item">
+            <label>1st Bin Range (m)</label>
+            <input
+              type="number"
+              id="firstBin"
+              value="2.39"
+              min="0"
+              step="0.01"
+            />
+            <div class="hint">第一层距仪器距离</div>
+          </div>
+          <div class="param-item">
+            <label>Bin Size (m)</label>
+            <input
+              type="number"
+              id="binSize"
+              value="0.50"
+              min="0.01"
+              step="0.01"
+            />
+            <div class="hint">每层间距</div>
+          </div>
+          <div class="param-item">
+            <label>整点容差（分钟）</label>
+            <input
+              type="number"
+              id="tolerance"
+              value="5"
+              min="1"
+              max="15"
+              step="1"
+            />
+            <div class="hint">整点前后多少分钟内算整点</div>
+          </div>
+        </div>
+
+        <div class="formula-box">
+          <strong>层位计算公式：</strong><br />
+          平均水深 = (BD1+BD2+BD3+BD4) ÷ 4 ÷ 100（cm→m）<br />
+          层号 =
+          <code>ROUND(((平均水深 - 1stBin) × 分数比例) / BinSize, 0)</code
+          ><br />
+          若层号 ≤ 0 则取第1层；超出实际层数则取最大有效层
+        </div>
+
+        <div style="margin-top: 16px">
+          <p
+            style="
+              font-size: 12px;
+              color: #64748b;
+              margin-bottom: 8px;
+              font-weight: 600;
+            "
+          >
+            整点选取策略：
+          </p>
+          <div class="mode-selector">
+            <label>
+              <input type="radio" name="selMode" value="nearest" checked />
+              <span>取最接近整点的1条记录</span>
+            </label>
+            <label>
+              <input type="radio" name="selMode" value="first" />
+              <span>取整点容差内最早的1条</span>
+            </label>
+            <label>
+              <input type="radio" name="selMode" value="avg" />
+              <span>取整点容差内所有记录取平均</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 处理按钮 -->
+      <div class="card">
+        <h2>执行处理</h2>
+        <div class="action-bar">
+          <button
+            class="btn btn-primary"
+            id="btnProcess"
+            disabled
+            onclick="processData()"
+          >
+            ▶ 开始解析提取
+          </button>
+          <button
+            class="btn btn-success"
+            id="btnExport"
+            disabled
+            onclick="exportTxt()"
+          >
+            ⬇ 导出结果 TXT
+          </button>
+        </div>
+        <div style="margin-top: 16px">
+          <div class="log-box" id="logBox">
+            <span class="log-info">等待上传文件...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 结果区 -->
+      <div class="card" id="resultCard" style="display: none">
+        <h2>提取结果预览</h2>
+        <div class="stats-row" id="statsRow"></div>
+        <div class="table-wrap">
+          <table id="resultTable">
+            <thead>
+              <tr id="theadRow1"></tr>
+              <tr id="theadRow2"></tr>
+            </thead>
+            <tbody id="tbodyResult"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ============================================================
+      // 全局状态
+      // ============================================================
+      let rawLines = [];
+      let parsedResult = [];
+      const LAYER_FRACTIONS = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0];
+
+      // 列结构（从文件解析后填充）
+      let colInfo = {
+        magCols: [], // [{colIdx, layer}, ...]  层号从1开始
+        dirCols: [], // [{colIdx, layer}, ...]
+        bdColIdx: -1, // BD1~BD4合并列的索引
+        dataStartRow: 16, // 数据起始行（0-indexed）
+      };
+
+      // ============================================================
+      // 拖拽上传
+      // ============================================================
+      const uploadArea = document.getElementById("uploadArea");
+      uploadArea.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        uploadArea.classList.add("drag-over");
+      });
+      uploadArea.addEventListener("dragleave", () =>
+        uploadArea.classList.remove("drag-over"),
+      );
+      uploadArea.addEventListener("drop", (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove("drag-over");
+        const file = e.dataTransfer.files[0];
+        if (file) handleFile(file);
+      });
+      document.getElementById("fileInput").addEventListener("change", (e) => {
+        if (e.target.files[0]) handleFile(e.target.files[0]);
+      });
+
+      // ============================================================
+      // 文件读取（GB2312）
+      // ============================================================
+      function handleFile(file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          const buf = e.target.result;
+          let text = "";
+          try {
+            text = new TextDecoder("gb2312").decode(buf);
+          } catch (ex) {
+            text = new TextDecoder("utf-8").decode(buf);
+          }
+          rawLines = text.split(/\r?\n/);
+
+          const infoEl = document.getElementById("fileInfo");
+          infoEl.textContent = `✅ 已加载：${file.name}（${(file.size / 1024).toFixed(1)} KB，共 ${rawLines.length} 行）`;
+          infoEl.classList.add("show");
+
+          extractParams(rawLines);
+          parseColumnStructure(rawLines);
+
+          document.getElementById("btnProcess").disabled = false;
+          log("info", `文件加载成功：${file.name}，${rawLines.length} 行数据`);
+        };
+        reader.readAsArrayBuffer(file);
+      }
+
+      // ============================================================
+      // 从文件头自动提取仪器参数（前15行内）
+      // ============================================================
+      function extractParams(lines) {
+        for (let i = 0; i < Math.min(15, lines.length); i++) {
+          const line = lines[i];
+          const m1 = line.match(/Ensemble Interval \(s\)\s*=\s*"?\s*([\d.]+)/i);
+          if (m1) setParam("ensInterval", m1[1]);
+          const m2 = line.match(/1st Bin Range \(m\)\s*=\s*"?\s*([\d.]+)/i);
+          if (m2) setParam("firstBin", m2[1]);
+          const m3 = line.match(/Bin Size \(m\)\s*=\s*"?\s*([\d.]+)/i);
+          if (m3) setParam("binSize", m3[1]);
+        }
+        log(
+          "ok",
+          `参数：Interval=${getParam("ensInterval")}s, 1stBin=${getParam("firstBin")}m, BinSize=${getParam("binSize")}m`,
+        );
+      }
+
+      // ============================================================
+      // 解析列结构：找到Mag/Dir各层列索引及BD合并列索引
+      // 第13行(索引12)=列名, 第14行(索引13)=单位, 第15行(索引14)=层数
+      // ============================================================
+      function parseColumnStructure(lines) {
+        colInfo.magCols = [];
+        colInfo.dirCols = [];
+        colInfo.bdColIdx = -1;
+        colInfo.dataStartRow = 16; // 默认第17行开始
+
+        // 找到包含 Ens/YR 等时间列名的那行（通常是第13行，索引12）
+        let headerRowIdx = -1;
+        for (let i = 0; i < Math.min(20, lines.length); i++) {
+          if (/^Ens\t|^"Ens"/.test(lines[i])) {
+            headerRowIdx = i;
+            break;
+          }
+        }
+        if (headerRowIdx < 0) {
+          log("warn", "未找到以Ens开头的表头行，使用默认列位置");
+          // 使用默认：列9-48为Mag，列49-88为Dir，列89为BD
+          for (let n = 1; n <= 40; n++) {
+            colInfo.magCols.push({ colIdx: 8 + n, layer: n });
+            colInfo.dirCols.push({ colIdx: 48 + n, layer: n });
+          }
+          colInfo.bdColIdx = 89;
+          colInfo.dataStartRow = 16;
+          return;
+        }
+
+        const headerCols = lines[headerRowIdx].split("\t");
+        const layerCols = (lines[headerRowIdx + 2] || "").split("\t");
+
+        for (let i = 0; i < headerCols.length; i++) {
+          const h = headerCols[i].replace(/"/g, "").trim().toLowerCase();
+          const lStr = layerCols[i] ? layerCols[i].trim() : "";
+          const layerNum = parseInt(lStr);
+
+          if (h === "mag" && !isNaN(layerNum)) {
+            colInfo.magCols.push({ colIdx: i, layer: layerNum });
+          } else if (h === "dir" && !isNaN(layerNum)) {
+            colInfo.dirCols.push({ colIdx: i, layer: layerNum });
+          } else if (/bd1/.test(h) || /bd1\s+bd2/.test(h)) {
+            colInfo.bdColIdx = i;
+          }
+        }
+
+        // 如果BD列未找到，尝试最后一列
+        if (colInfo.bdColIdx < 0) {
+          colInfo.bdColIdx = headerCols.length - 1;
+        }
+
+        colInfo.dataStartRow = headerRowIdx + 4; // header + unit + layer + 空行
+
+        // 按层号排序
+        colInfo.magCols.sort((a, b) => a.layer - b.layer);
+        colInfo.dirCols.sort((a, b) => a.layer - b.layer);
+
+        log(
+          "ok",
+          `列结构：Mag ${colInfo.magCols.length}层, Dir ${colInfo.dirCols.length}层, BD列索引=${colInfo.bdColIdx}, 数据起始行=${colInfo.dataStartRow + 1}`,
+        );
+      }
+
+      function setParam(id, val) {
+        document.getElementById(id).value = val;
+      }
+      function getParam(id) {
+        return parseFloat(document.getElementById(id).value);
+      }
+
+      // ============================================================
+      // 日志
+      // ============================================================
+      function log(type, msg) {
+        const box = document.getElementById("logBox");
+        const span = document.createElement("span");
+        span.className = "log-" + type;
+        const now = new Date().toLocaleTimeString("zh-CN");
+        span.textContent = `[${now}] ${msg}\n`;
+        box.appendChild(span);
+        box.scrollTop = box.scrollHeight;
+      }
+
+      // ============================================================
+      // 核心处理函数
+      // ============================================================
+      function processData() {
+        parsedResult = [];
+        document.getElementById("resultCard").style.display = "none";
+        document.getElementById("logBox").innerHTML = "";
+
+        const firstBin = getParam("firstBin");
+        const binSize = getParam("binSize");
+        const tolerance = getParam("tolerance");
+        const selMode = document.querySelector(
+          "input[name=selMode]:checked",
+        ).value;
+
+        log(
+          "info",
+          `开始处理：1stBin=${firstBin}m, BinSize=${binSize}m, 容差=±${tolerance}min, 策略=${selMode}`,
+        );
+
+        // 1. 解析所有数据行
+        const allRecords = [];
+        for (let i = colInfo.dataStartRow; i < rawLines.length; i++) {
+          const rec = parseDataLine(rawLines[i]);
+          if (rec) allRecords.push(rec);
+        }
+        log("ok", `共解析 ${allRecords.length} 条有效记录`);
+
+        if (allRecords.length === 0) {
+          log("err", "未解析到有效数据，请检查文件格式");
+          return;
+        }
+
+        // 2. 整点分组
+        const hourGroups = groupByHour(allRecords, tolerance);
+        log("ok", `识别到 ${hourGroups.length} 个整点时刻`);
+
+        // 3. 对每个整点提取数据
+        parsedResult = [];
+        for (const grp of hourGroups) {
+          const selected = selectRecord(grp.records, grp.targetHour, selMode);
+          if (!selected) continue;
+
+          // ===== 计算平均水深 =====
+          // BD1~BD4 存储在 selected.bd 数组（cm单位）
+          const bdVals = selected.bd.filter((v) => !isNaN(v) && v > 0);
+          if (bdVals.length === 0) {
+            log("warn", `${formatTime(selected)} 无有效水深数据，跳过`);
+            continue;
+          }
+          const avgDepthCm = bdVals.reduce((a, b) => a + b, 0) / bdVals.length;
+          const avgDepth = avgDepthCm / 100.0; // cm -> m
+
+          // ===== 按公式计算各层位层号 =====
+          // 层号 = ROUND(((avgDepth - firstBin) * frac) / binSize, 0)
+          // 若 <= 0 则取第1层；超出实际有效层则取最大有效层
+
+          // 找到该记录最大有效层（mag有实际数值的最大层号）
+          let maxValidLayer = 1;
+          for (let i = selected.mag.length - 1; i >= 0; i--) {
+            const v = selected.mag[i];
+            if (
+              v !== null &&
+              v !== undefined &&
+              v !== "" &&
+              !isNaN(parseFloat(v))
+            ) {
+              maxValidLayer = i + 1;
+              break;
+            }
+          }
+
+          const rowData = {
+            time: formatTime(selected),
+            date: formatDate(selected),
+            avgDepth: avgDepth,
+            bdVals: bdVals,
+            maxValidLayer: maxValidLayer,
+            fracs: {},
+          };
+
+          for (const frac of LAYER_FRACTIONS) {
+            let layerNum = Math.round(((avgDepth - firstBin) * frac) / binSize);
+            if (layerNum <= 0) layerNum = 1;
+            if (layerNum > maxValidLayer) layerNum = maxValidLayer;
+
+            // 取该层的mag/dir（层号从1开始，数组从0开始）
+            const magVal = selected.mag[layerNum - 1];
+            const dirVal = selected.dir[layerNum - 1];
+
+            rowData.fracs[frac] = {
+              layer: layerNum,
+              mag:
+                magVal !== null &&
+                magVal !== undefined &&
+                magVal !== "" &&
+                !isNaN(parseFloat(magVal))
+                  ? parseFloat(magVal)
+                  : null,
+              dir:
+                dirVal !== null &&
+                dirVal !== undefined &&
+                dirVal !== "" &&
+                !isNaN(parseFloat(dirVal))
+                  ? parseFloat(dirVal)
+                  : null,
+            };
+          }
+
+          parsedResult.push(rowData);
+        }
+
+        log("ok", `成功提取 ${parsedResult.length} 条整点数据`);
+
+        if (parsedResult.length > 0) {
+          renderTable(parsedResult);
+          document.getElementById("btnExport").disabled = false;
+        }
+      }
+
+      // ============================================================
+      // 解析单行数据
+      // 列结构：0=Ens, 1=YR, 2=MO, 3=DA, 4=HH, 5=MM, 6=SS, ...
+      // mag[i] = selected.mag[层号-1]（层号和列表中layer字段对应）
+      // ============================================================
+      function parseDataLine(line) {
+        if (!line || !line.trim()) return null;
+        const cols = line.split("\t");
+        if (cols.length < 7) return null;
+
+        try {
+          const yr = parseInt(cols[1]);
+          const mo = parseInt(cols[2]);
+          const da = parseInt(cols[3]);
+          const hh = parseInt(cols[4]);
+          const mm = parseInt(cols[5]);
+          const ss = parseInt(cols[6]);
+
+          if (
+            isNaN(yr) ||
+            isNaN(mo) ||
+            isNaN(da) ||
+            isNaN(hh) ||
+            isNaN(mm) ||
+            isNaN(ss)
+          )
+            return null;
+          if (hh < 0 || hh > 23 || mm < 0 || mm > 59) return null;
+
+          // 读取 Mag（按 colInfo.magCols 的顺序，下标=层号-1）
+          const maxLayer = colInfo.magCols.length;
+          const mag = new Array(maxLayer).fill(null);
+          for (const mc of colInfo.magCols) {
+            const v =
+              cols[mc.colIdx] !== undefined ? cols[mc.colIdx].trim() : "";
+            mag[mc.layer - 1] = v === "" ? null : v;
+          }
+
+          // 读取 Dir
+          const dir = new Array(maxLayer).fill(null);
+          for (const dc of colInfo.dirCols) {
+            const v =
+              cols[dc.colIdx] !== undefined ? cols[dc.colIdx].trim() : "";
+            dir[dc.layer - 1] = v === "" ? null : v;
+          }
+
+          // 读取 BD1~BD4（合并在同一列，空格分隔，单位cm）
+          const bd = [];
+          if (colInfo.bdColIdx >= 0 && cols[colInfo.bdColIdx] !== undefined) {
+            const bdStr = cols[colInfo.bdColIdx].trim();
+            const parts = bdStr.split(/\s+/);
+            for (const p of parts) {
+              const v = parseFloat(p);
+              if (!isNaN(v)) bd.push(v);
+            }
+          }
+
+          return { yr, mo, da, hh, mm, ss, mag, dir, bd };
+        } catch (e) {
+          return null;
+        }
+      }
+
+      // ============================================================
+      // 按整点分组
+      // ============================================================
+      function groupByHour(records, tolerance) {
+        const groups = {};
+
+        for (const rec of records) {
+          const { yr, mo, da, hh, mm } = rec;
+          const totalMin = hh * 60 + mm;
+          const nearestHourMin = Math.round(totalMin / 60) * 60;
+          const diff = Math.abs(totalMin - nearestHourMin);
+
+          if (diff <= tolerance) {
+            const nearestHour = nearestHourMin / 60; // 可能等于24（跨日）
+            let keyHH = nearestHour % 24;
+            let keyDa = da;
+            if (nearestHour >= 24) keyDa = da + 1;
+
+            const key = `${yr}${String(mo).padStart(2, "0")}${String(keyDa).padStart(2, "0")}_${String(Math.round(keyHH)).padStart(2, "0")}`;
+
+            if (!groups[key]) {
+              groups[key] = {
+                key,
+                targetHour: Math.round(keyHH),
+                records: [],
+              };
+            }
+            groups[key].records.push(rec);
+          }
+        }
+
+        return Object.values(groups).sort((a, b) =>
+          a.key < b.key ? -1 : a.key > b.key ? 1 : 0,
+        );
+      }
+
+      // ============================================================
+      // 从分组中选取代表记录
+      // ============================================================
+      function selectRecord(records, targetHour, mode) {
+        if (records.length === 0) return null;
+        if (records.length === 1) return records[0];
+
+        const targetSec = targetHour * 3600;
+
+        function dist(r) {
+          const sec = r.hh * 3600 + r.mm * 60 + r.ss;
+          const d = Math.abs(sec - targetSec);
+          return Math.min(d, Math.abs(d - 86400));
+        }
+
+        if (mode === "nearest") {
+          return records.reduce((best, r) => (dist(r) < dist(best) ? r : best));
+        } else if (mode === "first") {
+          return records[0];
+        } else {
+          // 矢量平均
+          const avgRec = JSON.parse(JSON.stringify(records[0]));
+          const maxLen = records.reduce((m, r) => Math.max(m, r.mag.length), 0);
+
+          for (let i = 0; i < maxLen; i++) {
+            const magVals = records
+              .map((r) => r.mag[i])
+              .filter((v) => v !== null && v !== "")
+              .map(Number)
+              .filter((v) => !isNaN(v));
+            avgRec.mag[i] =
+              magVals.length > 0
+                ? (magVals.reduce((a, b) => a + b, 0) / magVals.length).toFixed(
+                    1,
+                  )
+                : null;
+
+            const dirVals = records
+              .map((r) => r.dir[i])
+              .filter((v) => v !== null && v !== "")
+              .map(Number)
+              .filter((v) => !isNaN(v));
+            if (dirVals.length > 0) {
+              const sinSum = dirVals.reduce(
+                (s, d) => s + Math.sin((d * Math.PI) / 180),
+                0,
+              );
+              const cosSum = dirVals.reduce(
+                (s, d) => s + Math.cos((d * Math.PI) / 180),
+                0,
+              );
+              let avgDir =
+                (Math.atan2(sinSum / dirVals.length, cosSum / dirVals.length) *
+                  180) /
+                Math.PI;
+              if (avgDir < 0) avgDir += 360;
+              avgRec.dir[i] = avgDir.toFixed(1);
+            } else {
+              avgRec.dir[i] = null;
+            }
+          }
+
+          // 平均BD
+          const bdLen = records.reduce((m, r) => Math.max(m, r.bd.length), 0);
+          for (let i = 0; i < bdLen; i++) {
+            const bdVals = records
+              .map((r) => r.bd[i])
+              .filter((v) => v !== undefined && !isNaN(v));
+            avgRec.bd[i] =
+              bdVals.length > 0
+                ? bdVals.reduce((a, b) => a + b, 0) / bdVals.length
+                : 0;
+          }
+          return avgRec;
+        }
+      }
+
+      // ============================================================
+      // 格式化工具
+      // ============================================================
+      function formatTime(rec) {
+        return `${String(rec.hh).padStart(2, "0")}:${String(rec.mm).padStart(2, "0")}:${String(rec.ss).padStart(2, "0")}`;
+      }
+      function formatDate(rec) {
+        const year =
+          rec.yr < 100
+            ? rec.yr >= 50
+              ? 1900 + rec.yr
+              : 2000 + rec.yr
+            : rec.yr;
+        return `${year}/${String(rec.mo).padStart(2, "0")}/${String(rec.da).padStart(2, "0")}`;
+      }
+
+      // ============================================================
+      // 渲染结果表格
+      // ============================================================
+      function renderTable(data) {
+        const theadRow1 = document.getElementById("theadRow1");
+        const theadRow2 = document.getElementById("theadRow2");
+        const tbody = document.getElementById("tbodyResult");
+
+        theadRow1.innerHTML = `
+    <th rowspan="2">日期</th>
+    <th rowspan="2">时间</th>
+    <th rowspan="2">平均水深(m)</th>
+    ${LAYER_FRACTIONS.map((f) => `<th colspan="3">${f.toFixed(1)}H</th>`).join("")}
+  `;
+
+        theadRow2.innerHTML = LAYER_FRACTIONS.map(
+          () => `<th>层号</th><th>流速(mm/s)</th><th>流向(°)</th>`,
+        ).join("");
+
+        tbody.innerHTML = "";
+        for (const row of data) {
+          const tds = LAYER_FRACTIONS.map((f) => {
+            const v = row.fracs[f];
+            const mag = v.mag !== null ? v.mag.toFixed(0) : "-";
+            const dir = v.dir !== null ? v.dir.toFixed(1) : "-";
+            return `<td class="td-layer">${v.layer}</td><td>${mag}</td><td>${dir}</td>`;
+          }).join("");
+
+          tbody.innerHTML += `
+      <tr>
+        <td class="td-time">${row.date}</td>
+        <td class="td-time">${row.time}</td>
+        <td class="td-depth">${row.avgDepth.toFixed(3)}</td>
+        ${tds}
+      </tr>
+    `;
+        }
+
+        const statsRow = document.getElementById("statsRow");
+        statsRow.innerHTML = `
+    <span class="stat-badge">共 ${data.length} 个整点</span>
+    <span class="stat-badge">水深范围：${Math.min(...data.map((d) => d.avgDepth)).toFixed(2)}m ~ ${Math.max(...data.map((d) => d.avgDepth)).toFixed(2)}m</span>
+    <span class="stat-badge">时间范围：${data[0].date} ${data[0].time} ~ ${data[data.length - 1].date} ${data[data.length - 1].time}</span>
+  `;
+
+        document.getElementById("resultCard").style.display = "block";
+      }
+
+      // ============================================================
+      // 导出 TXT（UTF-8 BOM，制表符分隔）
+      // ============================================================
+      function exportTxt() {
+        if (parsedResult.length === 0) return;
+
+        const firstBin = getParam("firstBin");
+        const binSize = getParam("binSize");
+        const lines = [];
+
+        lines.push("水文ADCP流速流向整点数据提取结果");
+        lines.push(`提取时间：${new Date().toLocaleString("zh-CN")}`);
+        lines.push(`仪器参数：1stBin=${firstBin}m, BinSize=${binSize}m`);
+        lines.push(
+          `层位计算：ROUND(((水深-1stBin)*比例)/BinSize, 0)，<=0取第1层`,
+        );
+        lines.push("");
+
+        // 列名
+        const colNames = ["日期", "时间", "平均水深(m)"];
+        for (const frac of LAYER_FRACTIONS) {
+          colNames.push(
+            `${frac.toFixed(1)}H_层号`,
+            `${frac.toFixed(1)}H_流速(mm/s)`,
+            `${frac.toFixed(1)}H_流向(°)`,
+          );
+        }
+        lines.push(colNames.join("\t"));
+
+        // 数据行
+        for (const row of parsedResult) {
+          const parts = [row.date, row.time, row.avgDepth.toFixed(3)];
+          for (const frac of LAYER_FRACTIONS) {
+            const v = row.fracs[frac];
+            parts.push(
+              v.layer,
+              v.mag !== null ? v.mag.toFixed(0) : "",
+              v.dir !== null ? v.dir.toFixed(1) : "",
+            );
+          }
+          lines.push(parts.join("\t"));
+        }
+
+        lines.push("");
+        lines.push("--- 导出完毕 ---");
+
+        const content = lines.join("\r\n");
+        const blob = new Blob(["\uFEFF" + content], {
+          type: "text/plain;charset=utf-8",
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `ADCP_整点提取_${new Date().toLocaleDateString("zh-CN").replace(/\//g, "-")}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        log("ok", `已导出 ${parsedResult.length} 条整点记录`);
+      }
+    </script>
+  </body>
+</html>
