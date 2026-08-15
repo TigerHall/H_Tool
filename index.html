@@ -1,43 +1,95 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="color-scheme" content="light" />
-    <title>H_Tool - 自制工具集</title>
-    <!-- <script src="https://hehu.fun/dde/asset/js/main.js"></script> -->
-    <!-- <link rel="stylesheet" href="https://hehu.fun/dde/asset/css/main.css" /> -->
+    <meta name="color-scheme" content="light dark" />
+    <meta
+      name="description"
+      content="H_Tool 自制工具集 —— 收集日常实用的小工具，纯本地运行、保护隐私、随用随取。"
+    />
+    <title>H_Tool · 自制工具集</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A7%B0%3C/text%3E%3C/svg%3E"
+    />
     <link rel="stylesheet" href="./assets/main.css" />
   </head>
 
   <body>
-    <!-- 页面头部 -->
-    <header>
-      <div class="container">
-        <div class="header-content">
-          <div class="logo">
-            <h1>😶‍🌫️H_Tool</h1>
-          </div>
-        </div>
+    <!-- 顶部导航 -->
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="./index.html" aria-label="H_Tool 首页">
+          <span class="brand-logo" aria-hidden="true">🧰</span>
+          <span class="brand-name">H_Tool</span>
+        </a>
+        <button
+          class="theme-toggle"
+          id="themeToggle"
+          type="button"
+          aria-label="切换深色 / 浅色主题"
+          aria-pressed="false"
+        >
+          <span class="theme-toggle__icon" aria-hidden="true">🌙</span>
+        </button>
       </div>
     </header>
 
-    <!-- 主要内容区域 -->
-    <main>
-      <div class="container">
-        <!-- 工具卡片将通过common.js动态加载 -->
-        <div class="grid"></div>
+    <!-- Hero 区 -->
+    <section class="hero">
+      <div class="hero__bg" aria-hidden="true"></div>
+      <div class="container hero__inner">
+        <span class="hero__badge">✨ 个人效率工具箱</span>
+        <h1 class="hero__title">
+          H_Tool<span class="hero__title-accent"> 自制工具集</span>
+        </h1>
+        <p class="hero__subtitle">
+          收集日常实用的小工具 —— 纯本地运行、保护隐私、随用随取。
+        </p>
+        <div class="hero__stats" id="heroStats">
+          <div class="stat">
+            <span class="stat__num" id="statCount">—</span>
+            <span class="stat__label">个实用工具</span>
+          </div>
+          <span class="stat-divider" aria-hidden="true"></span>
+          <div class="stat">
+            <span class="stat__num">100%</span>
+            <span class="stat__label">本地运行</span>
+          </div>
+          <span class="stat-divider" aria-hidden="true"></span>
+          <div class="stat">
+            <span class="stat__num">开源</span>
+            <span class="stat__label">免费使用</span>
+          </div>
+        </div>
       </div>
+    </section>
+
+    <!-- 工具列表 -->
+    <main class="container main-content">
+      <div class="section-head">
+        <h2 class="section-title">可用工具</h2>
+        <p class="section-desc">点击卡片即可进入对应的小工具</p>
+      </div>
+      <!-- 卡片由 assets/common.js 动态渲染 -->
+      <div class="grid" id="toolGrid" aria-live="polite"></div>
     </main>
 
     <!-- 页脚 -->
-    <footer>
-      <div class="container">
-        <p id="copyright">© 2025 H_Tool 自制工具集</p>
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <p class="footer-copy">© <span id="year"></span> H_Tool · 自制工具集</p>
+        <a
+          class="footer-link"
+          href="https://github.com/TigerHall/H_Tool"
+          target="_blank"
+          rel="noopener noreferrer"
+          >在 GitHub 查看 ↗</a
+        >
       </div>
     </footer>
 
-    <!-- 引入JavaScript -->
     <script src="./assets/common.js"></script>
   </body>
 </html>

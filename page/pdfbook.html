@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PDF 小册子 · 完美旋转无拉伸</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <style>
       :root {
         --bg: #f5f5f5;
@@ -316,6 +315,26 @@
       .loading-overlay.active {
         display: flex;
       }
+      /* 初始加载（pdf.js 未就绪前） */
+      .init-loading {
+        position: fixed;
+        inset: 0;
+        background: var(--bg);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        gap: 14px;
+      }
+      .init-loading.hidden {
+        display: none;
+      }
+      .init-loading p {
+        font-size: 0.95rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+      }
       .big-spinner {
         width: 44px;
         height: 44px;
@@ -366,21 +385,21 @@
         }
         @page booklet {
           size: A4 landscape;
-          margin: 4mm;
+          margin: 0;
         }
         .print-sheet.booklet-sheet {
           page: booklet;
         }
         @page poster {
           size: A4 portrait;
-          margin: 6mm;
+          margin: 0;
         }
         .print-sheet.poster-sheet {
           page: poster;
         }
         @page normal {
           size: A4 portrait;
-          margin: 6mm;
+          margin: 0;
         }
         .print-sheet.normal-sheet {
           page: normal;
@@ -394,6 +413,11 @@
     </style>
   </head>
   <body>
+    <!-- 初始加载：pdf.js 未就绪时显示 -->
+    <div class="init-loading" id="initLoading">
+      <div class="spinner big-spinner"></div>
+      <p>正在加载 PDF 引擎...</p>
+    </div>
     <div class="app-container">
       <header class="app-header">
         <div class="logo">
@@ -444,15 +468,24 @@
                 type="range"
                 id="bookletMarginSlider"
                 min="0"
-                max="0.15"
-                step="0.005"
-                value="0.04"
+                max="4"
+                step="0.1"
+                value="0.5"
               />
-              <span id="bookletMarginValue">4.0%</span>
+              <span id="bookletMarginValue">0.5 cm</span>
             </label>
             <span style="font-size: 0.78rem; color: var(--text-secondary)">
               共<strong id="bookletTotalPages">0</strong>页
             </span>
+          </div>
+          <div class="settings-row" style="margin-top:4px">
+            <label
+              >排版模式
+              <select id="bookletModeSelect">
+                <option value="offset" selected>偏移（原大小，向两侧移动）</option>
+                <option value="scale">等比缩小（整体缩至A4内）</option>
+              </select>
+            </label>
           </div>
           <div
             style="
@@ -516,6 +549,7 @@
 
     <script>
       (function () {
+        const initLoading = document.getElementById("initLoading");
         const uploadZone = document.getElementById("uploadZone");
         const fileInput = document.getElementById("fileInput");
         const fileInfoBar = document.getElementById("fileInfoBar");
@@ -535,6 +569,7 @@
         );
         const bookletMarginValue =
           document.getElementById("bookletMarginValue");
+        const bookletModeSelect = document.getElementById("bookletModeSelect");
         const posterSettings = document.getElementById("posterSettings");
         const posterGridSelect = document.getElementById("posterGridSelect");
         const posterPageInput = document.getElementById("posterPageInput");
@@ -549,11 +584,40 @@
           selectedPosterPage = 1;
         let currentPDFFile = null;
         let renderedPagesCache = new Map();
-        const PRINT_SCALE = 3.0;
-        const BOOKLET_SCALE = 2.5;
+        const PRINT_SCALE = 4.0;
+        const BOOKLET_SCALE = 3.5;
+        const JPEG_QUALITY = 0.98;
 
-        pdfjsLib.GlobalWorkerOptions.workerSrc =
-          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+        // 动态加载 pdf.js（加载期间 initLoading 全屏提示可见）
+        function loadPdfJS() {
+          return new Promise((resolve, reject) => {
+            if (typeof pdfjsLib !== "undefined") {
+              resolve();
+              return;
+            }
+            const script = document.createElement("script");
+            script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error("PDF.js 加载失败"));
+            document.head.appendChild(script);
+          });
+        }
+
+        // 入口：等待 pdf.js 就绪后隐藏初始 loading，再初始化
+        async function initApp() {
+          try {
+            await loadPdfJS();
+          } catch (e) {
+            initLoading.querySelector("p").textContent = "PDF 引擎加载失败，请检查网络后刷新页面";
+            initLoading.querySelector(".spinner").style.display = "none";
+            return;
+          }
+          pdfjsLib.GlobalWorkerOptions.workerSrc =
+            "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+          initLoading.classList.add("hidden");
+        }
+
+        initApp();
 
         function showToast(msg) {
           const t = document.createElement("div");
@@ -728,47 +792,46 @@
           bookletTotalPages.textContent = Math.ceil(totalPages / 4) * 4;
         }
 
-        // 小册子页面排序 - 底部朝外版本
-        // 纸张横向放置，装订边在中间（gap位置）
-        // 打印设置：横向 + 双面打印（翻转短边）
-        // 
-        // 4页小册子示例（翻转短边后）：
-        // 第1张（正面）：左=第4页，右=第1页
-        // 第2张（背面）：左=第2页，右=第3页
-        // 
-        // 竖向页面：正常放置，flip=false
-        // 横向页面：需要旋转，rotateDir控制方向（1=顺时针，-1=逆时针）
-        // 翻转短边后，横向页面底部自然朝外
+        // 小册子页面排序 - 骑马钉拼版
+        // 纸张横向放置，装订边在中间（gap位置），双面打印（翻转短边）
+        //
+        // 拼版规则（每张物理纸的正反两面）：
+        //   M=总页数(已补至4的倍数), 物理纸数=M/4, 输出页数=M/2
+        //   第p张物理纸(p从0开始)：
+        //     正面(输出页2p):   左=M-2p,   右=2p+1
+        //     背面(输出页2p+1): 左=2p+2,   右=M-2p-1
+        //
+        // 8页示例：
+        //   纸1正面(k=0): [8,1]  纸1背面(k=1): [2,7]
+        //   纸2正面(k=2): [6,3]  纸2背面(k=3): [4,5]
+        //   双面打印+折叠后阅读顺序: 1→2→3→4→5→6→7→8
+        //
+        // rotateDir: 横向页面旋转方向（1=顺时针90°,-1=逆时针90°,0=不旋转）
+        //   翻转短边后，左右页都需要底部朝外
         function getBookletOrder(originalCount) {
           const M = Math.ceil(originalCount / 4) * 4;
           const order = [];
-          const sheets = M / 2;
+          const totalOutputs = M / 2;  // 正反面总输出页数
 
-          for (let i = 0; i < sheets; i++) {
-            const sheetNum = i + 1;
-            const isFront = i % 2 === 0;
+          for (let k = 0; k < totalOutputs; k++) {
+            const physicalSheet = Math.floor(k / 2);  // 第几张物理纸(0-indexed)
+            const isFront = k % 2 === 0;
 
             let leftPage, rightPage;
-            // 横向页面旋转方向：1=顺时针，-1=逆时针，0=不旋转（竖向）
             let leftRotateDir = 0, rightRotateDir = 0;
 
-            const smallPage = sheetNum * 2 - 1;  // 1, 3, 5...
-            const largePage = M - (sheetNum - 1) * 2;  // M, M-2...
-
             if (isFront) {
-              // 正面：左=大页码，右=小页码
-              leftPage = largePage;
-              rightPage = smallPage;
-              // 横向页面旋转方向：让底部朝外
-              leftRotateDir = 1;   // 大页码顺时针
-              rightRotateDir = -1; // 小页码逆时针
+              // 正面：左=大页码(从M递减), 右=小页码(从1递增)
+              leftPage = M - 2 * physicalSheet;
+              rightPage = 2 * physicalSheet + 1;
+              leftRotateDir = 1;
+              rightRotateDir = -1;
             } else {
-              // 背面：左=小页码，右=大页码
-              leftPage = smallPage;
-              rightPage = largePage;
-              // 横向页面旋转方向：让底部朝外（与正面相反）
-              leftRotateDir = 1;   // 小页码顺时针
-              rightRotateDir = -1; // 大页码逆时针
+              // 背面：左=小页码(从2递增), 右=大页码(从M-1递减)
+              leftPage = 2 * physicalSheet + 2;
+              rightPage = M - 2 * physicalSheet - 1;
+              leftRotateDir = 1;
+              rightRotateDir = -1;
             }
 
             order.push({
@@ -782,63 +845,100 @@
           return { order, adjusted: M };
         }
 
-        // ---------- 小册子打印 ----------
+        // ================================================================
+        //  小册子打印——完整流程说明
+        // ================================================================
+        //  第1步：确定页码排序（骑马钉拼版）
+        //    getBookletOrder() 算出每张纸正反面各放哪两页，补齐到4的倍数
+        //
+        //  第2步：确定纸张尺寸
+        //    目标纸 = A4 横向 (297×210mm)，每个页面放在 A5 竖版槽位 (148.5×210mm)
+        //    用 pdf.js 以 BOOKLET_SCALE 倍率渲染原始 PDF 页面
+        //
+        //  第3步：收集唯一页码 → 一次性并行渲染（全速）
+        //
+        //  第4步：将所有页面放入 A5 槽位
+        //    drawPageAdaptive 自动处理：
+        //      - 竖版页面：等比缩放到 A5 槽内居中
+        //      - 横版页面：旋转90°后等比缩放到 A5 槽内居中
+        //      - 旋转方向由 getBookletOrder 预设 (leftRotateDir/rightRotateDir)
+        //
+        //  第5步：根据排版模式放置 A5 槽位
+        //    偏移模式：画布 = A4横向，两个A5槽从中线向两侧各移 gap/2
+        //    等比模式：画布 = 2*A5宽 + gap，整体通过CSS缩到A4横向
+        // ================================================================
         async function prepareBookletPrint() {
           if (!pdfDoc || !totalPages) return showToast("⚠️ 请先上传PDF");
-          showLoading("生成小册子…");
+          showLoading("生成小册子… 请勿离开页面");
           printContainer.innerHTML = "";
 
           const { order, adjusted } = getBookletOrder(totalPages);
           bookletTotalPages.textContent = adjusted;
-          const marginRatio = parseFloat(bookletMarginSlider.value);
-          bookletMarginValue.textContent = (marginRatio * 100).toFixed(1) + "%";
+          const gapCm = parseFloat(bookletMarginSlider.value);
+          const mode = bookletModeSelect.value;
+          bookletMarginValue.textContent = gapCm.toFixed(1) + " cm";
 
-          // 确定统一的单页纵向区域：用第一页渲染结果，强制纵向（宽为短边，高为长边）
-          const first = await renderPage(1, BOOKLET_SCALE);
-          if (!first) {
-            hideLoading();
-            return;
+          // ---- 标准 A4/A5 尺寸（基于渲染 DPI） ----
+          const effectiveDPI = 72 * BOOKLET_SCALE;
+          const cmToPx = (cm) => Math.round(cm / 2.54 * effectiveDPI);
+          const a4LandscapeW = cmToPx(29.7);
+          const a4LandscapeH = cmToPx(21.0);
+          const a5SlotW = cmToPx(14.85);  // A5 竖版宽 = A4横向宽的一半
+          const a5SlotH = cmToPx(21.0);   // A5 竖版高 = A4横向高
+
+          const gapPx = cmToPx(gapCm);
+
+          // ---- 根据排版模式计算画布尺寸和槽位坐标 ----
+          let totalW, totalH, leftX, rightX;
+          if (mode === "offset") {
+            // 偏移模式：画布 = A4横向（固定），槽位从中间向两侧移动
+            totalW = a4LandscapeW;
+            totalH = a4LandscapeH;
+            const center = a4LandscapeW / 2;
+            const halfGap = gapPx / 2;
+            leftX  = Math.round(center - halfGap - a5SlotW);
+            rightX = Math.round(center + halfGap);
+            // 例 gap=0: leftX=0, rightX=a5SlotW (两页紧贴中线)
+            // 例 gap=1cm: leftX≈-50, rightX≈1523 (各外移0.5cm，左侧超出部分被画布裁剪)
+          } else {
+            // 等比缩小模式：gap分布在中间(装订)和两侧(外边距)，整体等比缩至A4
+            // 画布布局: [gap/2] [A5左页] [gap] [A5右页] [gap/2]
+            const sidePad = Math.round(gapPx / 2);
+            totalW = a5SlotW * 2 + gapPx + sidePad * 2;
+            totalH = a5SlotH;
+            leftX  = sidePad;
+            rightX = sidePad + a5SlotW + gapPx;
           }
-          const rawW = first.width,
-            rawH = first.height;
-          const pageW = Math.min(rawW, rawH);
-          const pageH = Math.max(rawW, rawH); // pageW ≤ pageH，保证纵向
 
-          const gap = Math.round(pageW * marginRatio);
-          const totalW = pageW * 2 + gap;
-          const totalH = pageH;
+          // ---- 第3+4+5步：分批渲染+排版（控制内存，大PDF不爆） ----
+          // 每批处理 SHEET_BATCH 张输出页，只渲染当前批次需要的PDF页面
+          const SHEET_BATCH = 8; // 每批8张输出页 = 4张物理纸 = 16页PDF ≈ 380MB
+          for (let batchStart = 0; batchStart < order.length; batchStart += SHEET_BATCH) {
+            const batchEnd = Math.min(batchStart + SHEET_BATCH, order.length);
 
-          // 分批处理，每批2张，避免阻塞主线程
-          const batchSize = 2;
-          for (let batchStart = 0; batchStart < order.length; batchStart += batchSize) {
-            const batchEnd = Math.min(batchStart + batchSize, order.length);
-
-            // 并行渲染当前批次的所有页面
-            const pagePromises = [];
+            // 收集本批次唯一页码
+            const batchPages = new Set();
             for (let i = batchStart; i < batchEnd; i++) {
-              const sheet = order[i];
-              // 预渲染左页和右页
-              const leftPromise = sheet.left
-                ? renderPage(sheet.left, BOOKLET_SCALE).catch(() => null)
-                : Promise.resolve(null);
-              const rightPromise = sheet.right
-                ? renderPage(sheet.right, BOOKLET_SCALE).catch(() => null)
-                : Promise.resolve(null);
-              pagePromises.push(
-                Promise.all([leftPromise, rightPromise]).then(([leftRes, rightRes]) => ({
-                  i,
-                  sheet,
-                  leftRes,
-                  rightRes,
-                }))
-              );
+              if (order[i].left) batchPages.add(order[i].left);
+              if (order[i].right) batchPages.add(order[i].right);
             }
 
-            const results = await Promise.all(pagePromises);
+            // 并行渲染本批次页面
+            const pageMap = new Map();
+            const promises = [];
+            for (const p of batchPages) {
+              promises.push(
+                renderPage(p, BOOKLET_SCALE).catch(() => null).then(res => {
+                  if (res) pageMap.set(p, res);
+                })
+              );
+            }
+            await Promise.all(promises);
 
-            // 绘制批次结果
-            for (const { i, sheet, leftRes, rightRes } of results) {
-              loadingText.textContent = `小册子 ${i + 1}/${order.length}`;
+            // 合成本批次输出页，完成后释放页面内存
+            for (let i = batchStart; i < batchEnd; i++) {
+              const sheet = order[i];
+              loadingText.textContent = `排版中 ${i + 1}/${order.length}，请勿离开页面`;
 
               const sheetCanvas = document.createElement("canvas");
               sheetCanvas.width = totalW;
@@ -847,35 +947,31 @@
               ctx.fillStyle = "#fff";
               ctx.fillRect(0, 0, totalW, totalH);
 
-              // 左页
+              const leftRes = sheet.left ? pageMap.get(sheet.left) || null : null;
+              const rightRes = sheet.right ? pageMap.get(sheet.right) || null : null;
+
               if (leftRes) {
-                drawPageAdaptive(ctx, leftRes.canvas, 0, 0, pageW, pageH, sheet.leftRotateDir);
-              } else if (sheet.left) {
-                drawBlankArea(ctx, 0, 0, pageW, pageH);
+                drawPageAdaptive(ctx, leftRes.canvas, leftX, 0, a5SlotW, a5SlotH, sheet.leftRotateDir);
               } else {
-                drawBlankArea(ctx, 0, 0, pageW, pageH);
+                drawBlankArea(ctx, leftX, 0, a5SlotW, a5SlotH);
               }
 
-              // 右页
-              const rightX = pageW + gap;
               if (rightRes) {
-                drawPageAdaptive(ctx, rightRes.canvas, rightX, 0, pageW, pageH, sheet.rightRotateDir);
-              } else if (sheet.right) {
-                drawBlankArea(ctx, rightX, 0, pageW, pageH);
+                drawPageAdaptive(ctx, rightRes.canvas, rightX, 0, a5SlotW, a5SlotH, sheet.rightRotateDir);
               } else {
-                drawBlankArea(ctx, rightX, 0, pageW, pageH);
+                drawBlankArea(ctx, rightX, 0, a5SlotW, a5SlotH);
               }
 
               const div = document.createElement("div");
               div.className = "print-sheet booklet-sheet";
               const img = document.createElement("img");
-              img.src = sheetCanvas.toDataURL("image/jpeg", 0.95);
+              img.src = sheetCanvas.toDataURL("image/jpeg", JPEG_QUALITY);
               div.appendChild(img);
               printContainer.appendChild(div);
-            }
 
-            // 让出时间片，让 UI 更新
-            await new Promise((resolve) => setTimeout(resolve, 0));
+              await new Promise((r) => setTimeout(r, 0));
+            }
+            // batch 结束，pageMap 出作用域 → 本批次页面 canvas 被 GC 回收
           }
 
           hideLoading();
@@ -892,7 +988,7 @@
           posterPageInput.value = page;
 
           const [cols, rows] = posterGridSelect.value.split("x").map(Number);
-          showLoading(`海报 ${cols}×${rows}…`);
+          showLoading(`海报 ${cols}×${rows}… 请勿离开页面`);
           printContainer.innerHTML = "";
 
           const posterScale = PRINT_SCALE * Math.max(cols, rows);
@@ -903,72 +999,42 @@
             hideLoading();
             return;
           }
-          if (!src) {
-            hideLoading();
-            return;
-          }
+          if (!src) { hideLoading(); return; }
 
-          const sw = src.width,
-            sh = src.height;
-          const tileW = Math.floor(sw / cols),
-            tileH = Math.floor(sh / rows);
-
-          // 分批处理瓦片，每批4个
+          const sw = src.width, sh = src.height;
+          const tileW = Math.floor(sw / cols), tileH = Math.floor(sh / rows);
           const totalTiles = rows * cols;
-          const batchSize = 4;
-          const tiles = [];
 
-          // 先生成所有瓦片数据
           for (let row = 0; row < rows; row++) {
             for (let col = 0; col < cols; col++) {
               const idx = row * cols + col + 1;
+              loadingText.textContent = `切片 ${idx}/${totalTiles}，请勿离开页面`;
+
               const sx = col * tileW;
               const sy = row * tileH;
               const actW = col === cols - 1 ? sw - sx : tileW;
               const actH = row === rows - 1 ? sh - sy : tileH;
-              tiles.push({ idx, sx, sy, actW, actH });
-            }
-          }
 
-          // 分批处理
-          for (let batchStart = 0; batchStart < tiles.length; batchStart += batchSize) {
-            const batchEnd = Math.min(batchStart + batchSize, tiles.length);
-
-            for (let i = batchStart; i < batchEnd; i++) {
-              const { idx, sx, sy, actW, actH } = tiles[i];
-              loadingText.textContent = `瓦片 ${idx}/${totalTiles}`;
-
+              const scaleDown = PRINT_SCALE / posterScale;
               const tileCanvas = document.createElement("canvas");
-              tileCanvas.width = Math.round(actW / (posterScale / PRINT_SCALE));
-              tileCanvas.height = Math.round(
-                actH / (posterScale / PRINT_SCALE),
-              );
+              tileCanvas.width = Math.round(actW * scaleDown);
+              tileCanvas.height = Math.round(actH * scaleDown);
               const tctx = tileCanvas.getContext("2d");
               tctx.fillStyle = "#fff";
               tctx.fillRect(0, 0, tileCanvas.width, tileCanvas.height);
-              tctx.drawImage(
-                src.canvas,
-                sx,
-                sy,
-                actW,
-                actH,
-                0,
-                0,
-                tileCanvas.width,
-                tileCanvas.height,
-              );
+              tctx.drawImage(src.canvas, sx, sy, actW, actH, 0, 0, tileCanvas.width, tileCanvas.height);
 
               const div = document.createElement("div");
               div.className = "print-sheet poster-sheet";
               const img = document.createElement("img");
-              img.src = tileCanvas.toDataURL("image/jpeg", 0.95);
+              img.src = tileCanvas.toDataURL("image/jpeg", JPEG_QUALITY);
               div.appendChild(img);
               printContainer.appendChild(div);
-            }
 
-            // 让出时间片，让 UI 更新
-            await new Promise((resolve) => setTimeout(resolve, 0));
+              await new Promise((r) => setTimeout(r, 0));
+            }
           }
+
           hideLoading();
           showToast(`🖼️ 海报已生成，请打印`);
           setTimeout(() => window.print(), 400);
@@ -977,38 +1043,35 @@
         // ---------- 普通打印 ----------
         async function prepareNormalPrint() {
           if (!pdfDoc) return showToast("⚠️ 请先上传PDF");
-          showLoading("普通打印…");
+          showLoading("普通打印… 请勿离开页面");
           printContainer.innerHTML = "";
 
-          // 分批处理，每批2页，避免阻塞主线程
-          const batchSize = 2;
-          for (let batchStart = 1; batchStart <= totalPages; batchStart += batchSize) {
-            const batchEnd = Math.min(batchStart + batchSize - 1, totalPages);
+          // 分批渲染，每批 PAGE_BATCH 页，控制内存
+          const PAGE_BATCH = 8;
+          for (let batchStart = 1; batchStart <= totalPages; batchStart += PAGE_BATCH) {
+            const batchEnd = Math.min(batchStart + PAGE_BATCH - 1, totalPages);
 
-            // 并行渲染当前批次
-            const batchPromises = [];
+            const renderPromises = [];
             for (let i = batchStart; i <= batchEnd; i++) {
-              batchPromises.push(
-                renderPage(i, PRINT_SCALE).then((res) => ({ i, res }))
+              renderPromises.push(
+                renderPage(i, PRINT_SCALE).then(res => ({ i, res }))
               );
             }
+            const results = await Promise.all(renderPromises);
 
-            const results = await Promise.all(batchPromises);
-
-            // 添加渲染好的页面到 DOM
             for (const { i, res } of results) {
               if (!res) continue;
-              loadingText.textContent = `第 ${i}/${totalPages} 页`;
+              loadingText.textContent = `排版中 ${i}/${totalPages}，请勿离开页面`;
+
               const div = document.createElement("div");
               div.className = "print-sheet normal-sheet";
               const img = document.createElement("img");
-              img.src = res.canvas.toDataURL("image/jpeg", 0.95);
+              img.src = res.canvas.toDataURL("image/jpeg", JPEG_QUALITY);
               div.appendChild(img);
               printContainer.appendChild(div);
-            }
 
-            // 让出时间片，让 UI 更新
-            await new Promise((resolve) => setTimeout(resolve, 0));
+              await new Promise((r) => setTimeout(r, 0));
+            }
           }
 
           hideLoading();
@@ -1082,7 +1145,7 @@
         });
         bookletMarginSlider.addEventListener("input", () => {
           bookletMarginValue.textContent =
-            (parseFloat(bookletMarginSlider.value) * 100).toFixed(1) + "%";
+            parseFloat(bookletMarginSlider.value).toFixed(1) + " cm";
         });
       })();
     </script>

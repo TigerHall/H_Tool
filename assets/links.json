@@ -3,30 +3,41 @@
     {
       "title": "大疆无人机GPS信息查看器",
       "url": "大疆无人机GPS等信息查看器/index.html",
-      "description": "查看大疆无人机拍摄照片中的GPS信息",
-      "image": "assets/pic/1.png"
+      "description": "查看大疆无人机拍摄照片中的 GPS、高度、镜头朝向等 EXIF 信息。",
+      "icon": "🛰️",
+      "tag": "影像工具",
+      "accent": "#10b981"
     },
     {
       "title": "ADCP数据处理工具",
       "url": "page/adcp.html",
-      "description": "处理和分析ADCP数据",
-      "image": "assets/pic/2.png"
+      "description": "处理并提取水文 ADCP 流速流向整点层位数据，支持导出。",
+      "icon": "🌊",
+      "tag": "数据处理",
+      "accent": "#0ea5e9"
     },
     {
       "title": "PDF小册子打印工具",
       "url": "page/pdfbook.html",
-      "description": "用于打印PDF格式的小册子",
-      "image": "assets/pic/3.png"
+      "description": "将 PDF 自动拼版，一键打印小册子、海报或普通文档。",
+      "icon": "📄",
+      "tag": "文档打印",
+      "accent": "#6366f1"
     },
     {
       "title": "Edge截图指南",
       "url": "小技巧/edge-screenshot-guide.html",
-      "description": "Microsoft Edge浏览器的截图功能使用指南",
-      "image": "assets/pic/edge截图指南.png"
+      "description": "Microsoft Edge 浏览器长截图与开发者工具截图使用指南。",
+      "icon": "✂️",
+      "tag": "使用技巧",
+      "accent": "#f59e0b"
     },
     {
-      "title": "未来还有更多小工具开发中",
-      "description": "这里将陆续更新更多小工具，敬请期待！"
+      "title": "更多工具开发中",
+      "description": "这里将陆续更新更多小工具，敬请期待！",
+      "icon": "🚀",
+      "tag": "敬请期待",
+      "comingSoon": true
     }
   ]
 }
